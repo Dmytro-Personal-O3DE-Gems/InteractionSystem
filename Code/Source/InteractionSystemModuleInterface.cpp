@@ -6,6 +6,8 @@
 
 #include <Clients/InteractionSystemSystemComponent.h>
 
+#include "InteractorComponent.h"
+
 namespace InteractionSystem
 {
     AZ_TYPE_INFO_WITH_NAME_IMPL(InteractionSystemModuleInterface,
@@ -21,6 +23,7 @@ namespace InteractionSystem
         // This happens through the [MyComponent]::Reflect() function.
         m_descriptors.insert(m_descriptors.end(), {
             InteractionSystemSystemComponent::CreateDescriptor(),
+			InteractorComponent::CreateDescriptor(),
             });
     }
 
