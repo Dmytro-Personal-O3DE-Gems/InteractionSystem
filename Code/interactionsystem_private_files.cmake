@@ -6,4 +6,6 @@ set(FILES
     Source/Clients/InteractionSystemSystemComponent.h
     Source/InteractorComponent.h
     Source/InteractorComponent.cpp
+    Source/InteractionOverlapFinderComponent.h
+    Source/InteractionOverlapFinderComponent.cpp
 )
