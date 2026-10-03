@@ -1,0 +1,7 @@
+
+set(FILES
+    Source/InteractionSystemModuleInterface.cpp
+    Source/InteractionSystemModuleInterface.h
+    Source/Clients/InteractionSystemSystemComponent.cpp
+    Source/Clients/InteractionSystemSystemComponent.h
+)

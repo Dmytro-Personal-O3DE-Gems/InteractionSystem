@@ -1,0 +1,30 @@
+{
+    "gem_name": "InteractionSystem",
+    "version": "1.0.0",
+    "display_name": "Interaction System",
+    "license": "MIT",
+    "license_url": "https://opensource.org/license/mit/",
+    "origin": "Dmytro Shyshkin",
+    "origin_url": "",
+    "type": "Code",
+    "summary": "Provides a lightweight entity interaction system built around a paired Interactor/Interactable component model, allowing entities (players, items, triggers) to detect and respond to interaction events.",
+    "canonical_tags": [
+        "Gem"
+    ],
+    "user_tags": [
+        "InteractionSystem"
+    ],
+    "platforms": [
+        "Android","Windows","Linux","iOS"
+    ],
+    "icon_path": "",
+    "requirements": "",
+    "documentation_url": "",
+    "dependencies": [
+    ],
+    "repo_uri": "",
+    "compatible_engines": [
+    ],
+    "engine_api_dependencies":[
+    ]
+}
