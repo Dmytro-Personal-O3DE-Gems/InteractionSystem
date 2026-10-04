@@ -3,6 +3,8 @@
 
 #include <AzCore/Component/Component.h>
 #include <InteractionSystem/InteractorInterface.h>
+#include <InteractionSystem/InteractableInterface.h>
+#include <InteractionSystem/InteractionOverlapFinderInterface.h>
 
 namespace InteractionSystem
 {

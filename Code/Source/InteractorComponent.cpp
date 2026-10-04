@@ -19,14 +19,21 @@ namespace InteractionSystem
         InteractorRequestBus::Handler::BusDisconnect(GetEntityId());
     }
 
+    void InteractorComponent::StartInteractionWithCurrentTarget()
+    {
+        // Stays invalid if no overlap finder answers: EventResult does not touch it without a handler.
+        AZ::EntityId currentTargetId;
+        InteractionOverlapFinderRequestBus::EventResult(
+            currentTargetId, GetEntityId(), &InteractionOverlapFinderRequests::GetCurrentTarget);
+
+        if (!InteractableRequestBus::HasHandlers(currentTargetId)) { return; }
+
+        StartInteraction(currentTargetId);
+    }
+
     void InteractorComponent::StartInteraction([[maybe_unused]] AZ::EntityId targetId)
     {
         // TODO: core path shared by player and AI.
-    }
-
-    void InteractorComponent::StartInteractionWithCurrentTarget()
-    {
-        // TODO: get the current target from InteractionOverlapFinderRequestBus at GetEntityId(), then StartInteraction().
     }
 
     void InteractorComponent::StopInteraction()
