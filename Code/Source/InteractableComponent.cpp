@@ -68,6 +68,7 @@ namespace InteractionSystem
         {
             serializeContext->Class<InteractableComponent, AZ::Component>()
                 ->Version(1)
+				->Field("InteractionInfo", &InteractableComponent::m_info)
                 ;
 
             if (AZ::EditContext* editContext = serializeContext->GetEditContext())
@@ -81,6 +82,12 @@ namespace InteractionSystem
                     ->Attribute(AZ::Edit::Attributes::Icon, "Icons/Components/Component_Placeholder.svg")
                     ->Attribute(AZ::Edit::Attributes::AppearsInAddComponentMenu, AZ_CRC_CE("Game"))
                     ->Attribute(AZ::Edit::Attributes::AutoExpand, true)
+
+                    ->DataElement(
+                        AZ::Edit::UIHandlers::Default,
+                        &InteractableComponent::m_info,
+                        "Interaction Info",
+						"Static description of this interactable entity.")
                     ;
             }
         }
