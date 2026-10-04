@@ -16,11 +16,16 @@ namespace InteractionSystem
     {
     public:
         AZ_EBUS_BEHAVIOR_BINDER(InteractableNotificationBusBehaviorHandler, "{B13063AF-8099-4C02-8028-CF44CE7FA742}",
-            AZ::SystemAllocator, OnInteracted);
+            AZ::SystemAllocator, OnInteracted, OnCanInteractQuery);
 
         void OnInteracted(AZ::EntityId interactorId) override
         {
             Call(FN_OnInteracted, interactorId);
+        }
+
+        void OnCanInteractQuery(AZ::EntityId interactorId, bool& canInteract) override
+        {
+            Call(FN_OnCanInteractQuery, interactorId, canInteract);
         }
     };
 
@@ -41,10 +46,11 @@ namespace InteractionSystem
         return m_info;
     }
 
-    bool InteractableComponent::CanInteract([[maybe_unused]] AZ::EntityId interactorId) const
+    bool InteractableComponent::CanInteract(AZ::EntityId interactorId) const
     {
-        // TODO: return false while this entity is unavailable (locked, already used, ...).
-        return true;
+        bool canInteract = true;   // allowed unless someone objects
+        InteractableNotificationBus::Event(GetEntityId(), &InteractableNotifications::OnCanInteractQuery, interactorId, canInteract);
+        return canInteract;
     }
 
     void InteractableComponent::Interact(AZ::EntityId interactorId)
@@ -106,8 +112,10 @@ namespace InteractionSystem
         provided.push_back(AZ_CRC_CE("InteractableComponentService"));
     }
 
-    void InteractableComponent::GetIncompatibleServices([[maybe_unused]] AZ::ComponentDescriptor::DependencyArrayType& incompatible)
+    void InteractableComponent::GetIncompatibleServices(AZ::ComponentDescriptor::DependencyArrayType& incompatible)
     {
+        // Only one Interactable per entity: InteractableRequestBus allows a single handler per address.
+        incompatible.push_back(AZ_CRC_CE("InteractableComponentService"));
     }
 
     void InteractableComponent::GetRequiredServices([[maybe_unused]] AZ::ComponentDescriptor::DependencyArrayType& required)

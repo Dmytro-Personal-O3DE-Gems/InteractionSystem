@@ -44,6 +44,8 @@ namespace InteractionSystem
     {
         AZ::TickBus::Handler::BusDisconnect();
         InteractionOverlapFinderRequestBus::Handler::BusDisconnect();
+
+		m_currentTargetId = AZ::EntityId();
     }
 
     AZ::EntityId InteractionOverlapFinderComponent::GetCurrentTarget() const
@@ -53,10 +55,18 @@ namespace InteractionSystem
 
     void InteractionOverlapFinderComponent::OnTick([[maybe_unused]] float deltaTime, [[maybe_unused]] AZ::ScriptTimePoint time)
     {
-        // TODO: store the result in m_currentTargetId and send
-        // InteractionOverlapFinderNotifications::OnTargetChanged to m_ownerEntityId when it changes.
-        CheckForOverlaps();
-	}
+        // Cast once per tick: a second call could give a different answer (CanInteract listeners may change their mind).
+        const AZ::EntityId newTargetId = CheckForOverlaps();
+        if (newTargetId == m_currentTargetId)
+        {
+            return;
+        }
+
+        const AZ::EntityId previousTargetId = m_currentTargetId;
+        m_currentTargetId = newTargetId;
+        InteractionOverlapFinderNotificationBus::Event(
+            m_ownerEntityId, &InteractionOverlapFinderNotifications::OnTargetChanged, previousTargetId, m_currentTargetId);
+    }
 
     AZ::EntityId InteractionOverlapFinderComponent::CheckForOverlaps() const
     {

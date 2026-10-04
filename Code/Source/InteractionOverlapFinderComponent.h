@@ -3,7 +3,7 @@
 
 #include <AzCore/Component/Component.h>
 #include <InteractionSystem/InteractionOverlapFinderInterface.h>
-#include <InteractionStstem/InteractableInterface.h>
+#include <InteractionSystem/InteractableInterface.h>
 
 #include <AzCore/Component/TickBus.h>
 

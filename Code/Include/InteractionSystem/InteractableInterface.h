@@ -45,6 +45,15 @@ namespace InteractionSystem
         //! Sent after a successful interaction.
         //! @param interactorId the entity that performed the interaction.
         virtual void OnInteracted([[maybe_unused]] AZ::EntityId interactorId) {}
+
+        //! Sent to the interactable's own entity when someone asks CanInteract().
+        //! Listeners may only set canInteract to false, never to true.
+        //! @param interactorId the entity that is asking if it can interact.
+        //! @param canInteract true by default; set it to false to prevent the interaction.
+        virtual void OnCanInteractQuery(
+            [[maybe_unused]] AZ::EntityId interactorId,
+            [[maybe_unused]] bool& canInteract) {
+        }
     };
 
     using InteractableNotificationBus = AZ::EBus<InteractableNotifications>;
