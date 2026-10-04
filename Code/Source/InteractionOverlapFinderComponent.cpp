@@ -55,7 +55,8 @@ namespace InteractionSystem
 
     void InteractionOverlapFinderComponent::OnTick([[maybe_unused]] float deltaTime, [[maybe_unused]] AZ::ScriptTimePoint time)
     {
-        // Cast once per tick: a second call could give a different answer (CanInteract listeners may change their mind).
+        // Cast once per tick: a second raycast would double the physics work,
+        // and the target could change between the two casts.
         const AZ::EntityId newTargetId = CheckForOverlaps();
         if (newTargetId == m_currentTargetId)
         {
@@ -119,11 +120,7 @@ namespace InteractionSystem
             return AZ::EntityId();
         }
 
-        // Stays false if nobody answers.
-        bool bCanInteract = false;
-        InteractableRequestBus::EventResult(bCanInteract, hitEntityId, &InteractableRequests::CanInteract, m_ownerEntityId);
-
-        return bCanInteract ? hitEntityId : AZ::EntityId();
+		return hitEntityId;
     }
 
     void InteractionOverlapFinderComponent::Reflect(AZ::ReflectContext* context)

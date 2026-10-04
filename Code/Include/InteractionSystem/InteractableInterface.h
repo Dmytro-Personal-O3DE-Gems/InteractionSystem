@@ -24,11 +24,11 @@ namespace InteractionSystem
         //! Whether the given interactor may interact with this entity right now
         //! (e.g. false if a door is locked or an item was already picked up).
         //! The Interactor asks this right before calling Interact().
-        virtual bool CanInteract(AZ::EntityId interactorId) const = 0;
+        virtual bool CanInteract(AZ::EntityId interactorId, [[maybe_unused]] InteractionType type) const = 0;
 
         //! Performs the interaction. The interactable does not know what the interaction does:
         //! it only notifies reaction components through InteractableNotificationBus.
-        virtual void Interact(AZ::EntityId interactorId) = 0;
+        virtual void Interact(AZ::EntityId interactorId, [[maybe_unused]] InteractionType type) = 0;
     };
 
     using InteractableRequestBus = AZ::EBus<InteractableRequests>;
@@ -42,16 +42,23 @@ namespace InteractionSystem
     public:
         AZ_RTTI(InteractionSystem::InteractableNotifications, "{FED0BC48-82A5-4D09-8F1C-8EB9755F203A}");
 
-        //! Sent after a successful interaction.
+        //! Sent after a successful press interaction (InteractionType::Press).
         //! @param interactorId the entity that performed the interaction.
-        virtual void OnInteracted([[maybe_unused]] AZ::EntityId interactorId) {}
+        virtual void OnPressInteracted([[maybe_unused]] AZ::EntityId interactorId) {}
+
+        //! Sent after a successful hold interaction (InteractionType::Hold),
+        //! once the button has been held for InteractionInfo::m_holdDuration.
+        //! @param interactorId the entity that performed the interaction.
+        virtual void OnHoldInteracted([[maybe_unused]] AZ::EntityId interactorId) {}
 
         //! Sent to the interactable's own entity when someone asks CanInteract().
         //! Listeners may only set canInteract to false, never to true.
         //! @param interactorId the entity that is asking if it can interact.
+        //! @param type what the interactor is trying to do (press or hold), so a listener can block one and allow the other.
         //! @param canInteract true by default; set it to false to prevent the interaction.
         virtual void OnCanInteractQuery(
             [[maybe_unused]] AZ::EntityId interactorId,
+            [[maybe_unused]] InteractionType type,
             [[maybe_unused]] bool& canInteract) {
         }
     };

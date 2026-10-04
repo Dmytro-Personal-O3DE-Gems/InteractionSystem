@@ -3,7 +3,6 @@
 
 #include <AzCore/Component/Component.h>
 #include <InteractionSystem/InteractableInterface.h>
-#include <InteractionSystem/InteractionInfo.h>
 
 namespace InteractionSystem
 {
@@ -28,8 +27,8 @@ namespace InteractionSystem
 
         // InteractableRequestBus
         InteractionInfo GetInteractionInfo() const override;
-        bool CanInteract(AZ::EntityId interactorId) const override;
-        void Interact(AZ::EntityId interactorId) override;
+        bool CanInteract(AZ::EntityId interactorId, InteractionType type) const override;
+        void Interact(AZ::EntityId interactorId, InteractionType type) override;
 
     private:
         InteractionInfo m_info;

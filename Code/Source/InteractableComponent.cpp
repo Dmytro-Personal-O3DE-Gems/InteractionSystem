@@ -16,16 +16,21 @@ namespace InteractionSystem
     {
     public:
         AZ_EBUS_BEHAVIOR_BINDER(InteractableNotificationBusBehaviorHandler, "{B13063AF-8099-4C02-8028-CF44CE7FA742}",
-            AZ::SystemAllocator, OnInteracted, OnCanInteractQuery);
+            AZ::SystemAllocator, OnPressInteracted, OnHoldInteracted, OnCanInteractQuery);
 
-        void OnInteracted(AZ::EntityId interactorId) override
+        void OnPressInteracted(AZ::EntityId interactorId) override
         {
-            Call(FN_OnInteracted, interactorId);
-        }
+            Call(FN_OnPressInteracted, interactorId);
+		}
 
-        void OnCanInteractQuery(AZ::EntityId interactorId, bool& canInteract) override
+        void OnHoldInteracted(AZ::EntityId interactorId) override
         {
-            Call(FN_OnCanInteractQuery, interactorId, canInteract);
+			Call(FN_OnHoldInteracted, interactorId);
+		}
+
+        void OnCanInteractQuery(AZ::EntityId interactorId, InteractionType type, bool& canInteract) override
+        {
+            Call(FN_OnCanInteractQuery, interactorId, type, canInteract);
         }
     };
 
@@ -46,17 +51,28 @@ namespace InteractionSystem
         return m_info;
     }
 
-    bool InteractableComponent::CanInteract(AZ::EntityId interactorId) const
+    bool InteractableComponent::CanInteract(AZ::EntityId interactorId, InteractionType type) const
     {
         bool canInteract = true;   // allowed unless someone objects
-        InteractableNotificationBus::Event(GetEntityId(), &InteractableNotifications::OnCanInteractQuery, interactorId, canInteract);
+        InteractableNotificationBus::Event(GetEntityId(), &InteractableNotifications::OnCanInteractQuery, interactorId, type, canInteract);
         return canInteract;
     }
 
-    void InteractableComponent::Interact(AZ::EntityId interactorId)
+    void InteractableComponent::Interact(AZ::EntityId interactorId, InteractionType type)
     {
-        // The interactable does not know what the interaction does: reaction components on this entity decide.
-        InteractableNotificationBus::Event(GetEntityId(), &InteractableNotifications::OnInteracted, interactorId);
+        switch(type)
+        {
+            case InteractionType::Press:
+                InteractableNotificationBus::Event(GetEntityId(), &InteractableNotifications::OnPressInteracted, interactorId);
+                break;
+            case InteractionType::Hold:
+                InteractableNotificationBus::Event(GetEntityId(), &InteractableNotifications::OnHoldInteracted, interactorId);
+                break;
+            default:
+                AZ_Assert(false, "Unknown InteractionType");
+                break;
+		}
+        
     }
 
     void InteractableComponent::Reflect(AZ::ReflectContext* context)
