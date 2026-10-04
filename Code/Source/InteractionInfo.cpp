@@ -36,12 +36,15 @@ namespace InteractionSystem
                         ->EnumAttribute(InteractionMode::Press, "Press")
                         ->EnumAttribute(InteractionMode::Hold, "Hold")
                         ->EnumAttribute(InteractionMode::PressOrHold, "Press or hold")
+                        // Visibility is re-read only on a full rebuild: AttributesAndValues skips it.
+                        ->Attribute(AZ::Edit::Attributes::ChangeNotify, AZ::Edit::PropertyRefreshLevels::EntireTree)
                     ->DataElement(
                         AZ::Edit::UIHandlers::Default,
                         &InteractionInfo::m_holdDuration,
                         "Hold Duration",
                         "How long the button must be held for a Hold interaction. "
                         "In 'Press or hold' mode it also separates a press from a hold. Ignored in 'Press' mode.")
+                        ->Attribute(AZ::Edit::Attributes::Visibility, &InteractionInfo::GetHoldDurationVisibility)
                         ->Attribute(AZ::Edit::Attributes::Min, 0.0f)
                         ->Attribute(AZ::Edit::Attributes::Step, 0.1f)
                         ->Attribute(AZ::Edit::Attributes::Suffix, " s")
@@ -74,5 +77,12 @@ namespace InteractionSystem
             behaviorContext->EnumProperty<static_cast<int>(InteractionType::Hold)>("InteractionType_Hold")
                 ->Attribute(AZ::Script::Attributes::Category, "Interaction");
         }
+    }
+
+    AZ::Crc32 InteractionInfo::GetHoldDurationVisibility() const
+    {
+        return m_mode == InteractionMode::Press
+            ? AZ::Edit::PropertyVisibility::Hide
+            : AZ::Edit::PropertyVisibility::Show;
     }
 } // namespace InteractionSystem

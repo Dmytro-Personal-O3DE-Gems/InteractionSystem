@@ -2,6 +2,7 @@
 #pragma once
 
 #include <AzCore/base.h>
+#include <AzCore/Math/Crc.h>
 #include <AzCore/Memory/SystemAllocator.h>
 #include <AzCore/RTTI/TypeInfo.h>
 #include <AzCore/std/string/string.h>
@@ -43,6 +44,10 @@ namespace InteractionSystem
         //! Registers this struct and both enums in the Serialize, Edit and Behavior contexts.
         //! Must be called exactly once, from the Reflect() of a component whose descriptor is registered in the module.
         static void Reflect(AZ::ReflectContext* context);
+
+        //! Editor-only: hides Hold Duration in the inspector when it has no effect (Press mode).
+        //! Returns AZ::Edit::PropertyVisibility::Show or ::Hide.
+        AZ::Crc32 GetHoldDurationVisibility() const;
 
         //! Name shown to the player, e.g. "Backpack". Empty means no name is shown.
         AZStd::string m_displayName;
