@@ -7,6 +7,7 @@
 #include <Clients/InteractionSystemSystemComponent.h>
 
 #include "InteractorComponent.h"
+#include "InteractableComponent.h"
 #include "InteractionOverlapFinderComponent.h"
 
 namespace InteractionSystem
@@ -25,6 +26,7 @@ namespace InteractionSystem
         m_descriptors.insert(m_descriptors.end(), {
             InteractionSystemSystemComponent::CreateDescriptor(),
 			InteractorComponent::CreateDescriptor(),
+			InteractableComponent::CreateDescriptor(),
 			InteractionOverlapFinderComponent::CreateDescriptor(),
             });
     }

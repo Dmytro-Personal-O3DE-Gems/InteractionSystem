@@ -2,16 +2,17 @@
 #pragma once
 
 #include <AzCore/Component/Component.h>
-#include <InteractionSystem/InteractorInterface.h>
+#include <InteractionSystem/InteractableInterface.h>
+#include <InteractionSystem/InteractionInfo.h>
 
 namespace InteractionSystem
 {
-    class InteractorComponent
+    class InteractableComponent
         : public AZ::Component
-        , public InteractorRequestBus::Handler
+        , public InteractableRequestBus::Handler
     {
     public:
-        AZ_COMPONENT_DECL(InteractorComponent);
+        AZ_COMPONENT_DECL(InteractableComponent);
 
         static void Reflect(AZ::ReflectContext* context);
 
@@ -21,12 +22,16 @@ namespace InteractionSystem
         static void GetDependentServices(AZ::ComponentDescriptor::DependencyArrayType& dependent);
 
     protected:
+
         void Activate() override;
         void Deactivate() override;
 
-        // InteractorRequestBus
-        void StartInteraction(AZ::EntityId targetId) override;
-        void StartInteractionWithCurrentTarget() override;
-        void StopInteraction() override;
+        // InteractableRequestBus
+        InteractionInfo GetInteractionInfo() const override;
+        bool CanInteract(AZ::EntityId interactorId) const override;
+        void Interact(AZ::EntityId interactorId) override;
+
+    private:
+        InteractionInfo m_info;
     };
 } // namespace InteractionSystem

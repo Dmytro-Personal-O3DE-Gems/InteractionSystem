@@ -19,6 +19,21 @@ namespace InteractionSystem
         InteractorRequestBus::Handler::BusDisconnect(GetEntityId());
     }
 
+    void InteractorComponent::StartInteraction([[maybe_unused]] AZ::EntityId targetId)
+    {
+        // TODO: core path shared by player and AI.
+    }
+
+    void InteractorComponent::StartInteractionWithCurrentTarget()
+    {
+        // TODO: get the current target from InteractionOverlapFinderRequestBus at GetEntityId(), then StartInteraction().
+    }
+
+    void InteractorComponent::StopInteraction()
+    {
+        // TODO: cancel a hold in progress.
+    }
+
     void InteractorComponent::Reflect(AZ::ReflectContext* context)
     {
         if (auto serializeContext = azrtti_cast<AZ::SerializeContext*>(context))
@@ -29,19 +44,31 @@ namespace InteractionSystem
 
             if (AZ::EditContext* editContext = serializeContext->GetEditContext())
             {
-                editContext->Class<InteractorComponent>("InteractorComponent", "[Description of functionality provided by this component]")
+                editContext->Class<InteractorComponent>(
+                    "Interactor",
+                    "Initiates interactions with entities that have an Interactable component. "
+                    "Works the same on players and NPCs: it receives a target entity and does not care how that target was found.")
                     ->ClassElement(AZ::Edit::ClassElements::EditorData, "")
-                    ->Attribute(AZ::Edit::Attributes::Category, "Interaction/Interactor")
+                    ->Attribute(AZ::Edit::Attributes::Category, "Interaction")
                     ->Attribute(AZ::Edit::Attributes::Icon, "Icons/Components/Component_Placeholder.svg")
                     ->Attribute(AZ::Edit::Attributes::AppearsInAddComponentMenu, AZ_CRC_CE("Game"))
+                    ->Attribute(AZ::Edit::Attributes::AutoExpand, true)
                     ;
             }
         }
 
         if (AZ::BehaviorContext* behaviorContext = azrtti_cast<AZ::BehaviorContext*>(context))
         {
-            behaviorContext->Class<InteractorComponent>("Interactor Component Group")
-                ->Attribute(AZ::Script::Attributes::Category, "InteractionSystem Gem Group")
+            behaviorContext->Class<InteractorComponent>("InteractorComponent")
+                ->Attribute(AZ::Script::Attributes::Category, "Interaction")
+                ;
+
+            behaviorContext->EBus<InteractorRequestBus>("InteractorRequestBus")
+                ->Attribute(AZ::Script::Attributes::Scope, AZ::Script::Attributes::ScopeFlags::Common)
+                ->Attribute(AZ::Script::Attributes::Category, "Interaction")
+                ->Event("StartInteraction", &InteractorRequests::StartInteraction)
+                ->Event("StartInteractionWithCurrentTarget", &InteractorRequests::StartInteractionWithCurrentTarget)
+                ->Event("StopInteraction", &InteractorRequests::StopInteraction)
                 ;
         }
     }
