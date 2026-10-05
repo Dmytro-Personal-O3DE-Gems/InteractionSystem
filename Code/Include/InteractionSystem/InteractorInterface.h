@@ -16,8 +16,9 @@ namespace InteractionSystem
 
         static const AZ::EBusHandlerPolicy HandlerPolicy = AZ::EBusHandlerPolicy::Single;
 
-        //! Starts an interaction with an explicit target.
-        //! Single-press targets (hold duration 0) complete immediately, hold targets start a timer.
+        //! Starts an interaction with an explicit target (the "button down" moment).
+        //! Press targets complete immediately; Hold and PressOrHold targets start a timer and complete
+        //! on the hold threshold or on StopInteraction(). Ignored while another attempt is in progress.
         //! Entry point for AI, which picks its target by other means.
         virtual void StartInteraction(AZ::EntityId targetId) = 0;
 
@@ -25,8 +26,8 @@ namespace InteractionSystem
         //! (InteractionOverlapFinderRequestBus at this entity's address). Entry point for player input.
         virtual void StartInteractionWithCurrentTarget() = 0;
 
-        //! Stops an interaction in progress (e.g. the button was released before the hold finished).
-        //! Has no effect if no hold is in progress.
+        //! The "button up" moment. In PressOrHold mode a quick release counts as a press;
+        //! otherwise an attempt that has not completed yet is cancelled. Has no effect if no attempt is in progress.
         virtual void StopInteraction() = 0;
     };
 
