@@ -9,6 +9,7 @@
 #include "InteractorComponent.h"
 #include "InteractableComponent.h"
 #include "InteractionOverlapFinderComponent.h"
+#include "InteractorInputComponent.h"
 
 namespace InteractionSystem
 {
@@ -28,6 +29,7 @@ namespace InteractionSystem
 			InteractorComponent::CreateDescriptor(),
 			InteractableComponent::CreateDescriptor(),
 			InteractionOverlapFinderComponent::CreateDescriptor(),
+			InteractorInputComponent::CreateDescriptor(),
             });
     }
 

@@ -6,4 +6,5 @@ set(FILES
     Include/InteractionSystem/InteractableInterface.h
     Include/InteractionSystem/InteractionInfo.h
     Include/InteractionSystem/InteractionOverlapFinderInterface.h
+    Include/InteractionSystem/InteractorInputInterface.h
 )

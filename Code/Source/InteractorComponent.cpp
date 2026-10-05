@@ -34,6 +34,8 @@ namespace InteractionSystem
     void InteractorComponent::StartInteraction([[maybe_unused]] AZ::EntityId targetId)
     {
         // TODO: core path shared by player and AI.
+        if (!InteractableRequestBus::HasHandlers(targetId)) { return; }
+
     }
 
     void InteractorComponent::StopInteraction()

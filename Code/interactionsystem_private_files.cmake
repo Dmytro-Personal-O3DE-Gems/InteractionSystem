@@ -11,4 +11,6 @@ set(FILES
     Source/InteractionInfo.cpp
     Source/InteractionOverlapFinderComponent.h
     Source/InteractionOverlapFinderComponent.cpp
+    Source/InteractorInputComponent.h
+    Source/InteractorInputComponent.cpp
 )

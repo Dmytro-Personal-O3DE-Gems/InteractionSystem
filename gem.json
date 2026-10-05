@@ -21,6 +21,7 @@
     "requirements": "",
     "documentation_url": "",
     "dependencies": [
+      "StartingPointInput"
     ],
     "repo_uri": "",
     "compatible_engines": [
