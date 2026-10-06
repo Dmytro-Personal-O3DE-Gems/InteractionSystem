@@ -27,6 +27,10 @@ namespace InteractionSystem
     void InteractorComponent::Activate()
     {
         InteractorRequestBus::Handler::BusConnect(GetEntityId());
+
+        // The overlap finder sends OnTargetChanged to its owner, which is this entity.
+        // NPCs have no finder: the connection simply never receives anything.
+        InteractionOverlapFinderNotificationBus::Handler::BusConnect(GetEntityId());
     }
 
     void InteractorComponent::Deactivate()
@@ -34,6 +38,7 @@ namespace InteractionSystem
         // Deactivated in the middle of a hold: drop the attempt so nothing fires later
         // and a re-activated component starts clean.
         EndInteraction();
+        InteractionOverlapFinderNotificationBus::Handler::BusDisconnect(GetEntityId());
         InteractorRequestBus::Handler::BusDisconnect(GetEntityId());
     }
 
@@ -58,6 +63,18 @@ namespace InteractionSystem
         }
 
         EndInteraction();
+    }
+
+    void InteractorComponent::OnTargetChanged([[maybe_unused]] AZ::EntityId previousTargetId, AZ::EntityId newTargetId)
+    {
+        // Compare with the target of the attempt, not with "any change": an attempt started through
+        // StartInteraction(target) may have a target the finder is not looking at.
+        // Losing the target (newTargetId invalid) also cancels.
+        // This is a cancel, not a denial: nothing refused the interaction, the player looked away.
+        if (m_currentTargetId.IsValid() && newTargetId != m_currentTargetId)
+        {
+            EndInteraction();
+        }
     }
 
     void InteractorComponent::StartInteractionWithCurrentTarget()
@@ -132,8 +149,6 @@ namespace InteractionSystem
 
         // Hold and PressOrHold: wait for the threshold (OnTick) or for the release (StopInteraction).
         AZ::TickBus::Handler::BusConnect();
-
-        // TODO: cancel the attempt when the overlap finder reports a different target (OnTargetChanged).
     }
 
     void InteractorComponent::StopInteraction()

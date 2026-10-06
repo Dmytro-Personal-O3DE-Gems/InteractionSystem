@@ -14,6 +14,7 @@ namespace InteractionSystem
         : public AZ::Component
         , public InteractorRequestBus::Handler
         , public AZ::TickBus::Handler
+        , public InteractionOverlapFinderNotificationBus::Handler
     {
     public:
         AZ_COMPONENT_DECL(InteractorComponent);
@@ -31,6 +32,9 @@ namespace InteractionSystem
 
         // AZ::TickBus: connected only while a Hold / PressOrHold attempt is in progress.
         void OnTick(float deltaTime, AZ::ScriptTimePoint time) override;
+
+        // InteractionOverlapFinderNotificationBus: cancels a hold when the player looks away.
+        void OnTargetChanged(AZ::EntityId previousTargetId, AZ::EntityId newTargetId) override;
 
         // InteractorRequestBus
         void StartInteraction(AZ::EntityId targetId) override;
