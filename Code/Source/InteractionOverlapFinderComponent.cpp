@@ -13,8 +13,10 @@ namespace InteractionSystem
         , public AZ::BehaviorEBusHandler
     {
     public:
-        AZ_EBUS_BEHAVIOR_BINDER(InteractionOverlapFinderNotificationBusBehaviorHandler, "{9DD3B145-8CC5-4496-A5AD-1D036D39B3C0}",
-            AZ::SystemAllocator, OnTargetChanged);
+        AZ_EBUS_BEHAVIOR_BINDER_WITH_DOC(InteractionOverlapFinderNotificationBusBehaviorHandler, "{9DD3B145-8CC5-4496-A5AD-1D036D39B3C0}",
+            AZ::SystemAllocator,
+            OnTargetChanged, ({ "Previous Target", "The interactable that was targeted before. Invalid if there was none." },
+                              { "New Target", "The interactable targeted now. Invalid if the target was lost." }));
 
         void OnTargetChanged(AZ::EntityId previousTargetId, AZ::EntityId newTargetId) override
         {

@@ -15,8 +15,17 @@ namespace InteractionSystem
         , public AZ::BehaviorEBusHandler
     {
     public:
-        AZ_EBUS_BEHAVIOR_BINDER(InteractableNotificationBusBehaviorHandler, "{B13063AF-8099-4C02-8028-CF44CE7FA742}",
-            AZ::SystemAllocator, OnPressInteracted, OnHoldInteracted, OnInteractionDenied, OnCanInteractQuery);
+        // _WITH_DOC: after each event, one {name, tooltip} pair per parameter, so Script Canvas pins
+        // show "Interactor" instead of the bare type name "EntityId". The count must match the parameters.
+        AZ_EBUS_BEHAVIOR_BINDER_WITH_DOC(InteractableNotificationBusBehaviorHandler, "{B13063AF-8099-4C02-8028-CF44CE7FA742}",
+            AZ::SystemAllocator,
+            OnPressInteracted, ({ "Interactor", "The entity that performed the interaction (player or NPC)." }),
+            OnHoldInteracted, ({ "Interactor", "The entity that performed the interaction (player or NPC)." }),
+            OnInteractionDenied, ({ "Interactor", "The entity that tried to interact (player or NPC)." },
+                                  { "Type", "What it tried to do. Compare with InteractionType_Press / InteractionType_Hold." }),
+            OnCanInteractQuery, ({ "Interactor", "The entity asking whether it can interact." },
+                                 { "Type", "What it wants to do. Compare with InteractionType_Press / InteractionType_Hold." },
+                                 { "Can Interact", "Current answer. Read-only in Script Canvas: only C++ listeners can set it to false." }));
 
         void OnPressInteracted(AZ::EntityId interactorId) override
         {

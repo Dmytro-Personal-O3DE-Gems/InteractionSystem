@@ -13,8 +13,10 @@ namespace InteractionSystem
         , public AZ::BehaviorEBusHandler
     {
     public:
-        AZ_EBUS_BEHAVIOR_BINDER(InteractorNotificationBusBehaviorHandler, "{659C40A5-2567-4BC1-80CC-7CF35FF1C21A}",
-            AZ::SystemAllocator, OnInteractionDenied);
+        AZ_EBUS_BEHAVIOR_BINDER_WITH_DOC(InteractorNotificationBusBehaviorHandler, "{659C40A5-2567-4BC1-80CC-7CF35FF1C21A}",
+            AZ::SystemAllocator,
+            OnInteractionDenied, ({ "Target", "The entity this interactor tried to interact with." },
+                                  { "Type", "What it tried to do. Compare with InteractionType_Press / InteractionType_Hold." }));
 
         void OnInteractionDenied(AZ::EntityId targetId, InteractionType type) override
         {
