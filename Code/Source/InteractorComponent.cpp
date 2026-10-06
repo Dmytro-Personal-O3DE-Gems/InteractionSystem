@@ -190,7 +190,7 @@ namespace InteractionSystem
 
     void InteractorComponent::NotifyInteractionDenied(InteractionType type) const
     {
-        InteractableNotificationBus::Event(m_currentTargetId, &InteractableNotifications::OnInteractionDenied, GetEntityId(), type);
+        InteractableNotificationBus::Event(m_currentTargetId, &InteractableNotifications::OnInteractionRefused, GetEntityId(), type);
         InteractorNotificationBus::Event(GetEntityId(), &InteractorNotifications::OnInteractionDenied, m_currentTargetId, type);
     }
 

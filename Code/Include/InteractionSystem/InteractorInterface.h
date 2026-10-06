@@ -44,7 +44,7 @@ namespace InteractionSystem
         AZ_RTTI(InteractionSystem::InteractorNotifications, "{44D46BA9-4708-42A4-B01A-980739ADA4F5}");
 
         //! Sent when this interactor tried to interact but the target's CanInteract() said no.
-        //! The target receives InteractableNotifications::OnInteractionDenied at the same moment.
+        //! The target receives InteractableNotifications::OnInteractionRefused at the same moment.
         //! @param targetId the entity this interactor tried to interact with.
         //! @param type what it tried to do.
         virtual void OnInteractionDenied(

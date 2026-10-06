@@ -55,20 +55,20 @@ namespace InteractionSystem
         //! (e.g. a locked door: play the "rattle the handle" animation and sound).
         //! @param interactorId the entity that tried to interact (player or NPC).
         //! @param type what it tried to do, so the reaction can differ for a press and a hold.
-        virtual void OnInteractionDenied(
+        virtual void OnInteractionRefused(
             [[maybe_unused]] AZ::EntityId interactorId,
             [[maybe_unused]] InteractionType type) {}
 
         //! Sent to the interactable's own entity when someone asks CanInteract().
-        //! Listeners may only set canInteract to false, never to true.
+        //! Every listener votes: return false to block the interaction, true for "no objection".
+        //! The answers are combined with a logical AND, so one false wins and the order of listeners does not matter.
+        //! Script Canvas can vote too: the node has an input pin for the answer (set it to true when only observing).
         //! @param interactorId the entity that is asking if it can interact.
         //! @param type what the interactor is trying to do (press or hold), so a listener can block one and allow the other.
-        //! @param canInteract true by default; set it to false to prevent the interaction.
-        virtual void OnCanInteractQuery(
+        //! @return false to block, true if this listener has no objection.
+        virtual bool OnCanInteractQuery(
             [[maybe_unused]] AZ::EntityId interactorId,
-            [[maybe_unused]] InteractionType type,
-            [[maybe_unused]] bool& canInteract) {
-        }
+            [[maybe_unused]] InteractionType type) { return true; }
     };
 
     using InteractableNotificationBus = AZ::EBus<InteractableNotifications>;

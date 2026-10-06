@@ -3,6 +3,8 @@
 
 #include <InteractionSystem/InteractionInfo.h>
 
+#include <AzCore/std/functional_basic.h>
+
 #include <AzCore/Serialization/SerializeContext.h>
 #include <AzCore/Serialization/EditContext.h>
 #include <AzCore/RTTI/BehaviorContext.h>
@@ -21,11 +23,10 @@ namespace InteractionSystem
             AZ::SystemAllocator,
             OnPressInteracted, ({ "Interactor", "The entity that performed the interaction (player or NPC)." }),
             OnHoldInteracted, ({ "Interactor", "The entity that performed the interaction (player or NPC)." }),
-            OnInteractionDenied, ({ "Interactor", "The entity that tried to interact (player or NPC)." },
+            OnInteractionRefused, ({ "Interactor", "The entity that tried to interact (player or NPC)." },
                                   { "Type", "What it tried to do. Compare with InteractionType_Press / InteractionType_Hold." }),
             OnCanInteractQuery, ({ "Interactor", "The entity asking whether it can interact." },
-                                 { "Type", "What it wants to do. Compare with InteractionType_Press / InteractionType_Hold." },
-                                 { "Can Interact", "Current answer. Read-only in Script Canvas: only C++ listeners can set it to false." }));
+                                 { "Type", "What it wants to do. Compare with InteractionType_Press / InteractionType_Hold." }));
 
         void OnPressInteracted(AZ::EntityId interactorId) override
         {
@@ -37,14 +38,18 @@ namespace InteractionSystem
 			Call(FN_OnHoldInteracted, interactorId);
 		}
 
-        void OnInteractionDenied(AZ::EntityId interactorId, InteractionType type) override
+        void OnInteractionRefused(AZ::EntityId interactorId, InteractionType type) override
         {
-            Call(FN_OnInteractionDenied, interactorId, type);
+            Call(FN_OnInteractionRefused, interactorId, type);
         }
 
-        void OnCanInteractQuery(AZ::EntityId interactorId, InteractionType type, bool& canInteract) override
+        bool OnCanInteractQuery(AZ::EntityId interactorId, InteractionType type) override
         {
-            Call(FN_OnCanInteractQuery, interactorId, type, canInteract);
+            // true unless the graph answers: CallResult leaves it untouched when the graph
+            // did not add this event, and a graph that only listens to OnPressInteracted must not block.
+            bool canInteract = true;
+            CallResult(canInteract, FN_OnCanInteractQuery, interactorId, type);
+            return canInteract;
         }
     };
 
@@ -67,9 +72,11 @@ namespace InteractionSystem
 
     bool InteractableComponent::CanInteract(AZ::EntityId interactorId, InteractionType type) const
     {
-        bool canInteract = true;   // allowed unless someone objects
-        InteractableNotificationBus::Event(GetEntityId(), &InteractableNotifications::OnCanInteractQuery, interactorId, type, canInteract);
-        return canInteract;
+        // Every listener votes; the votes are combined with AND, starting from true
+        // (no listeners = allowed). One false blocks, regardless of listener order.
+        AZ::EBusReduceResult<bool, AZStd::logical_and<bool>> canInteract(true);
+        InteractableNotificationBus::EventResult(canInteract, GetEntityId(), &InteractableNotifications::OnCanInteractQuery, interactorId, type);
+        return canInteract.value;
     }
 
     void InteractableComponent::Interact(AZ::EntityId interactorId, InteractionType type)
