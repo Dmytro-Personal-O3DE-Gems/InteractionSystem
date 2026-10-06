@@ -7,6 +7,21 @@
 
 namespace InteractionSystem
 {
+    //! Lets Script Canvas and Lua handle InteractorNotificationBus events (e.g. a UI on the player).
+    class InteractorNotificationBusBehaviorHandler
+        : public InteractorNotificationBus::Handler
+        , public AZ::BehaviorEBusHandler
+    {
+    public:
+        AZ_EBUS_BEHAVIOR_BINDER(InteractorNotificationBusBehaviorHandler, "{659C40A5-2567-4BC1-80CC-7CF35FF1C21A}",
+            AZ::SystemAllocator, OnInteractionDenied);
+
+        void OnInteractionDenied(AZ::EntityId targetId, InteractionType type) override
+        {
+            Call(FN_OnInteractionDenied, targetId, type);
+        }
+    };
+
     AZ_COMPONENT_IMPL(InteractorComponent, "InteractorComponent", "{1BB2245A-07ED-4ED9-B40F-FF0CD33F0436}");
 
     void InteractorComponent::Activate()
@@ -37,7 +52,10 @@ namespace InteractionSystem
         {
             InteractableRequestBus::Event(m_currentTargetId, &InteractableRequests::Interact, GetEntityId(), InteractionType::Hold);
         }
-        // TODO: else send the "interaction denied" notification (to the target and to this entity).
+        else
+        {
+            NotifyInteractionDenied(InteractionType::Hold);
+        }
 
         EndInteraction();
     }
@@ -78,14 +96,17 @@ namespace InteractionSystem
             {
                 InteractableRequestBus::Event(m_currentTargetId, &InteractableRequests::Interact, GetEntityId(), InteractionType::Press);
             }
-            // TODO: else send the "interaction denied" notification.
+            else
+            {
+                NotifyInteractionDenied(InteractionType::Press);
+            }
             EndInteraction();
             return;
 
         case InteractionMode::Hold:
             if (!CanInteractWithTarget(InteractionType::Hold))
             {
-                // TODO: send the "interaction denied" notification.
+                NotifyInteractionDenied(InteractionType::Hold);
                 EndInteraction();
                 return;
             }
@@ -95,7 +116,9 @@ namespace InteractionSystem
             // The type is not known yet: start if at least one of the two is allowed.
             if (!CanInteractWithTarget(InteractionType::Press) && !CanInteractWithTarget(InteractionType::Hold))
             {
-                // TODO: send the "interaction denied" notification.
+                // Both are denied and the player has not chosen yet: reported as Press,
+                // the action a quick release of this button would have produced.
+                NotifyInteractionDenied(InteractionType::Press);
                 EndInteraction();
                 return;
             }
@@ -131,7 +154,10 @@ namespace InteractionSystem
             {
                 InteractableRequestBus::Event(m_currentTargetId, &InteractableRequests::Interact, GetEntityId(), InteractionType::Press);
             }
-            // TODO: else send the "interaction denied" notification.
+            else
+            {
+                NotifyInteractionDenied(InteractionType::Press);
+            }
         }
 
         EndInteraction();
@@ -143,6 +169,12 @@ namespace InteractionSystem
         bool canInteract = false;
         InteractableRequestBus::EventResult(canInteract, m_currentTargetId, &InteractableRequests::CanInteract, GetEntityId(), type);
         return canInteract;
+    }
+
+    void InteractorComponent::NotifyInteractionDenied(InteractionType type) const
+    {
+        InteractableNotificationBus::Event(m_currentTargetId, &InteractableNotifications::OnInteractionDenied, GetEntityId(), type);
+        InteractorNotificationBus::Event(GetEntityId(), &InteractorNotifications::OnInteractionDenied, m_currentTargetId, type);
     }
 
     void InteractorComponent::EndInteraction()
@@ -190,6 +222,12 @@ namespace InteractionSystem
         {
             behaviorContext->Class<InteractorComponent>("InteractorComponent")
                 ->Attribute(AZ::Script::Attributes::Category, "Interaction")
+                ;
+
+            behaviorContext->EBus<InteractorNotificationBus>("InteractorNotificationBus")
+                ->Attribute(AZ::Script::Attributes::Scope, AZ::Script::Attributes::ScopeFlags::Common)
+                ->Attribute(AZ::Script::Attributes::Category, "Interaction")
+                ->Handler<InteractorNotificationBusBehaviorHandler>()
                 ;
 
             behaviorContext->EBus<InteractorRequestBus>("InteractorRequestBus")

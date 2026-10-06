@@ -41,6 +41,10 @@ namespace InteractionSystem
         //! Asks the current target whether this interactor may perform the given interaction right now.
         bool CanInteractWithTarget(InteractionType type) const;
 
+        //! Tells both sides that CanInteract() said no: the target (animation, sound)
+        //! and this entity (UI). Must be called before EndInteraction() clears the target.
+        void NotifyInteractionDenied(InteractionType type) const;
+
         //! Ends the current attempt (success, denial or cancel): stops the timer and clears all runtime state.
         //! Safe to call when no attempt is in progress.
         void EndInteraction();

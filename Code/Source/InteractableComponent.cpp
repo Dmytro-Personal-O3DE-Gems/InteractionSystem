@@ -16,7 +16,7 @@ namespace InteractionSystem
     {
     public:
         AZ_EBUS_BEHAVIOR_BINDER(InteractableNotificationBusBehaviorHandler, "{B13063AF-8099-4C02-8028-CF44CE7FA742}",
-            AZ::SystemAllocator, OnPressInteracted, OnHoldInteracted, OnCanInteractQuery);
+            AZ::SystemAllocator, OnPressInteracted, OnHoldInteracted, OnInteractionDenied, OnCanInteractQuery);
 
         void OnPressInteracted(AZ::EntityId interactorId) override
         {
@@ -27,6 +27,11 @@ namespace InteractionSystem
         {
 			Call(FN_OnHoldInteracted, interactorId);
 		}
+
+        void OnInteractionDenied(AZ::EntityId interactorId, InteractionType type) override
+        {
+            Call(FN_OnInteractionDenied, interactorId, type);
+        }
 
         void OnCanInteractQuery(AZ::EntityId interactorId, InteractionType type, bool& canInteract) override
         {

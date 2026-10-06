@@ -51,6 +51,14 @@ namespace InteractionSystem
         //! @param interactorId the entity that performed the interaction.
         virtual void OnHoldInteracted([[maybe_unused]] AZ::EntityId interactorId) {}
 
+        //! Sent when an interactor tried to interact but CanInteract() said no
+        //! (e.g. a locked door: play the "rattle the handle" animation and sound).
+        //! @param interactorId the entity that tried to interact (player or NPC).
+        //! @param type what it tried to do, so the reaction can differ for a press and a hold.
+        virtual void OnInteractionDenied(
+            [[maybe_unused]] AZ::EntityId interactorId,
+            [[maybe_unused]] InteractionType type) {}
+
         //! Sent to the interactable's own entity when someone asks CanInteract().
         //! Listeners may only set canInteract to false, never to true.
         //! @param interactorId the entity that is asking if it can interact.

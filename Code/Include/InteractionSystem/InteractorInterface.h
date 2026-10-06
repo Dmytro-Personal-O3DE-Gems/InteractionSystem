@@ -2,6 +2,7 @@
 #pragma once
 
 #include <AzCore/Component/ComponentBus.h>
+#include <InteractionSystem/InteractionInfo.h>
 
 namespace InteractionSystem
 {
@@ -32,5 +33,25 @@ namespace InteractionSystem
     };
 
     using InteractorRequestBus = AZ::EBus<InteractorRequests>;
+
+    //! Notifications sent by an Interactor about its own attempts.
+    //! Address: the EntityId of the entity that owns the Interactor (same as the request bus).
+    //! Intended for the UI on the player (e.g. switch the prompt to "Locked").
+    class InteractorNotifications
+        : public AZ::ComponentBus
+    {
+    public:
+        AZ_RTTI(InteractionSystem::InteractorNotifications, "{44D46BA9-4708-42A4-B01A-980739ADA4F5}");
+
+        //! Sent when this interactor tried to interact but the target's CanInteract() said no.
+        //! The target receives InteractableNotifications::OnInteractionDenied at the same moment.
+        //! @param targetId the entity this interactor tried to interact with.
+        //! @param type what it tried to do.
+        virtual void OnInteractionDenied(
+            [[maybe_unused]] AZ::EntityId targetId,
+            [[maybe_unused]] InteractionType type) {}
+    };
+
+    using InteractorNotificationBus = AZ::EBus<InteractorNotifications>;
 
 } // namespace InteractionSystem
