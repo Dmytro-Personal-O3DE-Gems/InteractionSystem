@@ -28,6 +28,7 @@ namespace InteractionSystem
         // InteractableRequestBus
         InteractionInfo GetInteractionInfo() const override;
         bool CanInteract(AZ::EntityId interactorId, InteractionType type) const override;
+        AZStd::string GetInteractableLabel(AZ::EntityId interactorId, InteractionType type) const override;
         void Interact(AZ::EntityId interactorId, InteractionType type) override;
 
     private:

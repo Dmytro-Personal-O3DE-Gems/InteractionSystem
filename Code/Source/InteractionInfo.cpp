@@ -15,6 +15,8 @@ namespace InteractionSystem
                 ->Version(1)
                 ->Field("DisplayName", &InteractionInfo::m_displayName)
                 ->Field("Mode", &InteractionInfo::m_mode)
+				->Field("OnPressLabel", &InteractionInfo::m_OnPressLabel)
+				->Field("OnHoldLabel", &InteractionInfo::m_OnHoldLabel)
                 ->Field("HoldDuration", &InteractionInfo::m_holdDuration)
                 ;
 
@@ -38,6 +40,18 @@ namespace InteractionSystem
                         ->EnumAttribute(InteractionMode::PressOrHold, "Press or hold")
                         // Visibility is re-read only on a full rebuild: AttributesAndValues skips it.
                         ->Attribute(AZ::Edit::Attributes::ChangeNotify, AZ::Edit::PropertyRefreshLevels::EntireTree)
+                    ->DataElement(
+                        AZ::Edit::UIHandlers::Default,
+                        &InteractionInfo::m_OnPressLabel,
+                        "On Press Label",
+						"Optional label for the OnPress interaction. Leave empty to show no label.")
+					    ->Attribute(AZ::Edit::Attributes::Visibility, &InteractionInfo::GetOnPressLabelVisibility)
+                    ->DataElement(
+                        AZ::Edit::UIHandlers::Default,
+                        &InteractionInfo::m_OnHoldLabel,
+						"On Hold Label",
+						"Optional label for the OnHold interaction. Leave empty to show no label.")
+                        ->Attribute(AZ::Edit::Attributes::Visibility, &InteractionInfo::GetOnHoldLabelVisibility)
                     ->DataElement(
                         AZ::Edit::UIHandlers::Default,
                         &InteractionInfo::m_holdDuration,
@@ -67,6 +81,8 @@ namespace InteractionSystem
                 ->Property("Mode",
                     [](InteractionInfo* info) { return static_cast<int>(info->m_mode); },
                     [](InteractionInfo* info, const int& mode) { info->m_mode = static_cast<InteractionMode>(mode); })
+                ->Property("OnPressLabel", BehaviorValueProperty(&InteractionInfo::m_OnPressLabel))
+                ->Property("OnHoldLabel", BehaviorValueProperty(&InteractionInfo::m_OnHoldLabel))
                 ->Property("HoldDuration", BehaviorValueProperty(&InteractionInfo::m_holdDuration))
                 ;
 
@@ -84,5 +100,19 @@ namespace InteractionSystem
         return m_mode == InteractionMode::Press
             ? AZ::Edit::PropertyVisibility::Hide
             : AZ::Edit::PropertyVisibility::Show;
+    }
+
+    AZ::Crc32 InteractionInfo::GetOnPressLabelVisibility() const
+    {
+		return m_mode == InteractionMode::Press || m_mode == InteractionMode::PressOrHold
+            ? AZ::Edit::PropertyVisibility::Show
+			: AZ::Edit::PropertyVisibility::Hide;
+	}
+
+    AZ::Crc32 InteractionInfo::GetOnHoldLabelVisibility() const
+    {
+        return m_mode == InteractionMode::Hold || m_mode == InteractionMode::PressOrHold
+            ? AZ::Edit::PropertyVisibility::Show
+            : AZ::Edit::PropertyVisibility::Hide;
     }
 } // namespace InteractionSystem

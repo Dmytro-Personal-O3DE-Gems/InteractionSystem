@@ -2,7 +2,9 @@
 #pragma once
 
 #include <AzCore/Component/ComponentBus.h>
+#include <AzCore/std/string/string.h>
 #include <InteractionSystem/InteractionInfo.h>
+#include <AzCore/std/string/string.h>
 
 namespace InteractionSystem
 {
@@ -25,6 +27,16 @@ namespace InteractionSystem
         //! (e.g. false if a door is locked or an item was already picked up).
         //! The Interactor asks this right before calling Interact().
         virtual bool CanInteract(AZ::EntityId interactorId, [[maybe_unused]] InteractionType type) const = 0;
+
+        //! Label of one action of this interactable, e.g. "Open" or "Close", for UI prompts.
+        //! Asks the listeners (ReturnInteractableLabel) first: the label can depend on runtime state
+        //! (door open or closed) and on who is asking (has the key or not).
+        //! No non-empty answer -> the default label from InteractionInfo for this type.
+        //! Several non-empty answers -> one of them, plus a warning: a label must have a single owner.
+        //! Cheap enough to be called every frame while the interactable is targeted.
+        //! @param interactorId the entity that is asking for the label.
+        //! @param type which action the label is for (press or hold).
+        virtual AZStd::string GetInteractableLabel(AZ::EntityId interactorId, [[maybe_unused]] InteractionType type) const = 0;
 
         //! Performs the interaction. The interactable does not know what the interaction does:
         //! it only notifies reaction components through InteractableNotificationBus.
@@ -69,6 +81,21 @@ namespace InteractionSystem
         virtual bool OnCanInteractQuery(
             [[maybe_unused]] AZ::EntityId interactorId,
             [[maybe_unused]] InteractionType type) { return true; }
+
+        //! Sent to the interactable's own entity when someone asks GetInteractableLabel(), e.g. a UI prompt.
+        //! Return a label to override the default one, or an empty string for "no opinion".
+        //! Rules for listeners:
+        //! - Called EVERY FRAME while the entity is targeted: keep it cheap and free of side effects
+        //!   (no sounds, no logs, no state changes), just answer from the current state.
+        //! - A label must have a single owner: if several listeners answer for the same action,
+        //!   one answer is picked at random (handler order is not defined) and a warning is logged.
+        //! Script Canvas: the node has an input pin for the answer; leave it empty when only observing.
+        //! @param interactorId the entity that is asking for the label.
+        //! @param type which action the label is for (press or hold).
+        //! @return the label to show, or an empty string to keep the default from InteractionInfo.
+        virtual AZStd::string ReturnInteractableLabel(
+            [[maybe_unused]] AZ::EntityId interactorId,
+            [[maybe_unused]] InteractionType type) { return {}; }
     };
 
     using InteractableNotificationBus = AZ::EBus<InteractableNotifications>;

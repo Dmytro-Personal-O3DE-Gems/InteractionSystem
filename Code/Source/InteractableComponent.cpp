@@ -5,6 +5,8 @@
 
 #include <AzCore/std/functional_basic.h>
 
+#include <AzCore/Component/Entity.h>
+
 #include <AzCore/Serialization/SerializeContext.h>
 #include <AzCore/Serialization/EditContext.h>
 #include <AzCore/RTTI/BehaviorContext.h>
@@ -26,7 +28,9 @@ namespace InteractionSystem
             OnInteractionRefused, ({ "Interactor", "The entity that tried to interact (player or NPC)." },
                                   { "Type", "What it tried to do. Compare with InteractionType_Press / InteractionType_Hold." }),
             OnCanInteractQuery, ({ "Interactor", "The entity asking whether it can interact." },
-                                 { "Type", "What it wants to do. Compare with InteractionType_Press / InteractionType_Hold." }));
+                                 { "Type", "What it wants to do. Compare with InteractionType_Press / InteractionType_Hold." }),
+            ReturnInteractableLabel, ({ "Interactor", "The entity that is asking for the label." },
+                                      { "Type", "Which action the label is for. Compare with InteractionType_Press / InteractionType_Hold." }));
 
         void OnPressInteracted(AZ::EntityId interactorId) override
         {
@@ -51,7 +55,39 @@ namespace InteractionSystem
             CallResult(canInteract, FN_OnCanInteractQuery, interactorId, type);
             return canInteract;
         }
+
+        AZStd::string ReturnInteractableLabel(AZ::EntityId interactorId, InteractionType type) override
+        {
+            AZStd::string label;
+            CallResult(label, FN_ReturnInteractableLabel, interactorId, type);
+            return label;
+		}
     };
+
+    namespace
+    {
+        //! Collects the answers of all ReturnInteractableLabel listeners.
+        //! EventResult does "result = <answer of a handler>" once per handler (same trick as EBusReduceResult),
+        //! so operator= sees every answer. Empty answers mean "no opinion" and are skipped.
+        struct LabelAnswers
+        {
+            AZStd::string m_firstLabel; //!< First non-empty answer.
+            int m_count = 0;            //!< How many listeners gave a non-empty answer.
+
+            void operator=(const AZStd::string& answer)
+            {
+                if (answer.empty())
+                {
+                    return;
+                }
+                if (m_count == 0)
+                {
+                    m_firstLabel = answer;
+                }
+                ++m_count;
+            }
+        };
+    } // namespace
 
     AZ_COMPONENT_IMPL(InteractableComponent, "InteractableComponent", "{11B4071B-3140-40FA-8904-A2804A3B70FE}");
 
@@ -77,6 +113,36 @@ namespace InteractionSystem
         AZ::EBusReduceResult<bool, AZStd::logical_and<bool>> canInteract(true);
         InteractableNotificationBus::EventResult(canInteract, GetEntityId(), &InteractableNotifications::OnCanInteractQuery, interactorId, type);
         return canInteract.value;
+    }
+
+    AZStd::string InteractableComponent::GetInteractableLabel(AZ::EntityId interactorId, InteractionType type) const
+    {
+        LabelAnswers answers;
+        InteractableNotificationBus::EventResult(
+            answers, GetEntityId(), &InteractableNotifications::ReturnInteractableLabel, interactorId, type);
+
+        if (answers.m_count == 0)
+        {
+            // Nobody overrides it: the default label from the inspector.
+            switch (type)
+            {
+            case InteractionType::Press:
+                return m_info.m_OnPressLabel;
+            case InteractionType::Hold:
+                return m_info.m_OnHoldLabel;
+            default:
+                AZ_Assert(false, "Unknown InteractionType");
+                return {};
+            }
+        }
+
+        // Several owners is a setup error: handler order is not defined, so "first" is effectively random.
+        AZ_Warning("Interactable", answers.m_count == 1,
+            "Entity '%s': %d listeners returned a label for the same action, using one of them. "
+            "A label must have a single owner.",
+            GetEntity()->GetName().c_str(), answers.m_count);
+
+        return answers.m_firstLabel;
     }
 
     void InteractableComponent::Interact(AZ::EntityId interactorId, InteractionType type)
@@ -140,6 +206,7 @@ namespace InteractionSystem
                 ->Attribute(AZ::Script::Attributes::Category, "Interaction")
                 ->Event("GetInteractionInfo", &InteractableRequests::GetInteractionInfo)
                 ->Event("CanInteract", &InteractableRequests::CanInteract)
+                ->Event("GetInteractableLabel", &InteractableRequests::GetInteractableLabel)
                 ->Event("Interact", &InteractableRequests::Interact)
                 ;
 

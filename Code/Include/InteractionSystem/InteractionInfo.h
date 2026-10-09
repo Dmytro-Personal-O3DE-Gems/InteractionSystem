@@ -49,11 +49,24 @@ namespace InteractionSystem
         //! Returns AZ::Edit::PropertyVisibility::Show or ::Hide.
         AZ::Crc32 GetHoldDurationVisibility() const;
 
+        //! Editor-only: shows the press label only in modes that have a press (Press, PressOrHold).
+        AZ::Crc32 GetOnPressLabelVisibility() const;
+
+        //! Editor-only: shows the hold label only in modes that have a hold (Hold, PressOrHold).
+        AZ::Crc32 GetOnHoldLabelVisibility() const;
+
         //! Name shown to the player, e.g. "Backpack". Empty means no name is shown.
         AZStd::string m_displayName;
 
         //! Which interactions this entity supports.
         InteractionMode m_mode = InteractionMode::Press;
+
+        //! Default label of the press action, e.g. "Open". Used when no listener answers the label query
+        //! (see InteractableRequests::GetInteractableLabel). Later this becomes a localization key.
+        AZStd::string m_OnPressLabel;
+
+        //! Default label of the hold action, e.g. "Lockpick". Same rules as m_OnPressLabel.
+        AZStd::string m_OnHoldLabel;
 
         //! Seconds the button must be held for a Hold interaction.
         //! In PressOrHold mode it is also the threshold that separates a press from a hold.
