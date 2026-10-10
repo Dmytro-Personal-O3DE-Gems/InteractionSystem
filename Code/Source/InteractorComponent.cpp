@@ -17,11 +17,18 @@ namespace InteractionSystem
         AZ_EBUS_BEHAVIOR_BINDER_WITH_DOC(InteractorNotificationBusBehaviorHandler, "{659C40A5-2567-4BC1-80CC-7CF35FF1C21A}",
             AZ::SystemAllocator,
             OnInteractionDenied, ({ "Target", "The entity this interactor tried to interact with." },
-                                  { "Type", "What it tried to do. Compare with InteractionType_Press / InteractionType_Hold." }));
+                                  { "Type", "What it tried to do. Compare with InteractionType_Press / InteractionType_Hold." }),
+            OnInteractionDone, ({ "Target", "The entity this interactor interacted with." },
+                                { "Type", "What it did. Compare with InteractionType_Press / InteractionType_Hold." }));
 
         void OnInteractionDenied(AZ::EntityId targetId, InteractionType type) override
         {
             Call(FN_OnInteractionDenied, targetId, type);
+        }
+
+        void OnInteractionDone(AZ::EntityId targetId, InteractionType type) override
+        {
+            Call(FN_OnInteractionDone, targetId, type);
         }
     };
 
@@ -59,6 +66,7 @@ namespace InteractionSystem
         if (CanInteractWithTarget(InteractionType::Hold))
         {
             InteractableRequestBus::Event(m_currentTargetId, &InteractableRequests::Interact, GetEntityId(), InteractionType::Hold);
+            NotifyInteractionDone(InteractionType::Hold);
         }
         else
         {
@@ -115,6 +123,7 @@ namespace InteractionSystem
             if (CanInteractWithTarget(InteractionType::Press))
             {
                 InteractableRequestBus::Event(m_currentTargetId, &InteractableRequests::Interact, GetEntityId(), InteractionType::Press);
+                NotifyInteractionDone(InteractionType::Press);
             }
             else
             {
@@ -171,6 +180,7 @@ namespace InteractionSystem
             if (CanInteractWithTarget(InteractionType::Press))
             {
                 InteractableRequestBus::Event(m_currentTargetId, &InteractableRequests::Interact, GetEntityId(), InteractionType::Press);
+                NotifyInteractionDone(InteractionType::Press);
             }
             else
             {
@@ -240,6 +250,12 @@ namespace InteractionSystem
     {
         InteractableNotificationBus::Event(m_currentTargetId, &InteractableNotifications::OnInteractionRefused, GetEntityId(), type);
         InteractorNotificationBus::Event(GetEntityId(), &InteractorNotifications::OnInteractionDenied, m_currentTargetId, type);
+    }
+
+    void InteractorComponent::NotifyInteractionDone(InteractionType type) const
+    {
+        // Only this entity (UI, sounds, achievements): the target already got OnPressInteracted / OnHoldInteracted from Interact().
+        InteractorNotificationBus::Event(GetEntityId(), &InteractorNotifications::OnInteractionDone, m_currentTargetId, type);
     }
 
     void InteractorComponent::EndInteraction()

@@ -50,6 +50,10 @@ namespace InteractionSystem
         //! and this entity (UI). Must be called before EndInteraction() clears the target.
         void NotifyInteractionDenied(InteractionType type) const;
 
+        //! Tells this entity that the interaction was performed (sent right after Interact()).
+        //! Must be called before EndInteraction() clears the target.
+        void NotifyInteractionDone(InteractionType type) const;
+
         //! Ends the current attempt (success, denial or cancel): stops the timer and clears all runtime state.
         //! Safe to call when no attempt is in progress.
         void EndInteraction();

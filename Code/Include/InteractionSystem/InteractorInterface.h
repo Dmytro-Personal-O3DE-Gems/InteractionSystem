@@ -59,6 +59,15 @@ namespace InteractionSystem
         virtual void OnInteractionDenied(
             [[maybe_unused]] AZ::EntityId targetId,
             [[maybe_unused]] InteractionType type) {}
+
+        //! Sent when this interactor performed an interaction: CanInteract() said yes and Interact() was called
+        //! (the target received OnPressInteracted / OnHoldInteracted at the same moment).
+        //! Pair of OnInteractionDenied. A cancelled attempt (released early, target changed) sends neither.
+        //! @param targetId the entity this interactor interacted with.
+        //! @param type what it did.
+        virtual void OnInteractionDone(
+            [[maybe_unused]] AZ::EntityId targetId,
+            [[maybe_unused]] InteractionType type) {}
     };
 
     using InteractorNotificationBus = AZ::EBus<InteractorNotifications>;
