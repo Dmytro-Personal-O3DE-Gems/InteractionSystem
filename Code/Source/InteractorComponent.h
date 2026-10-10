@@ -40,6 +40,7 @@ namespace InteractionSystem
         void StartInteraction(AZ::EntityId targetId) override;
         void StartInteractionWithCurrentTarget() override;
         void StopInteraction() override;
+        float GetHoldProgress() const override;
 
     private:
         //! Asks the current target whether this interactor may perform the given interaction right now.

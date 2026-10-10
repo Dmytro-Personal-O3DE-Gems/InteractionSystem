@@ -1,6 +1,7 @@
 
 #include "InteractorComponent.h"
 
+#include <AzCore/Math/MathUtils.h>
 #include <AzCore/Serialization/SerializeContext.h>
 #include <AzCore/Serialization/EditContext.h>
 #include <AzCore/RTTI/BehaviorContext.h>
@@ -180,6 +181,53 @@ namespace InteractionSystem
         EndInteraction();
     }
 
+    float InteractorComponent::GetHoldProgress() const
+    {
+        // No attempt in progress (nothing pressed, or it already ended).
+        if (!m_currentTargetId.IsValid())
+        {
+            return 0.0f;
+        }
+
+        // Elapsed and total time of the part that the progress ring shows.
+        float elapsed = 0.0f;
+        float duration = 0.0f;
+        switch (m_interactionInfo.m_mode)
+        {
+        case InteractionMode::Press:
+            return 0.0f; // a press has no hold phase
+
+        case InteractionMode::Hold:
+            // The hold counts from the moment the button went down.
+            elapsed = m_fCurrentInteractionHoldTime;
+            duration = m_interactionInfo.m_holdDuration;
+            break;
+
+        case InteractionMode::PressOrHold:
+            // Inside the window it may still turn out to be a press: show nothing yet.
+            if (m_fCurrentInteractionHoldTime <= m_fInteractionWindow)
+            {
+                return 0.0f;
+            }
+            // Count from the end of the window, so the ring starts empty instead of jumping in half-filled.
+            elapsed = m_fCurrentInteractionHoldTime - m_fInteractionWindow;
+            duration = m_interactionInfo.m_holdDuration - m_fInteractionWindow;
+            break;
+
+        default:
+            AZ_Assert(false, "Unknown InteractionMode");
+            return 0.0f;
+        }
+
+        // Hold duration not longer than the window (or zero): nothing to wait for, the hold fires at once.
+        if (duration <= 0.0f)
+        {
+            return 1.0f;
+        }
+
+        return AZ::GetClamp(elapsed / duration, 0.0f, 1.0f);
+    }
+
     bool InteractorComponent::CanInteractWithTarget(InteractionType type) const
     {
         // Stays false if the target has no Interactable anymore (e.g. it was destroyed during the hold).
@@ -253,6 +301,7 @@ namespace InteractionSystem
                 ->Event("StartInteraction", &InteractorRequests::StartInteraction)
                 ->Event("StartInteractionWithCurrentTarget", &InteractorRequests::StartInteractionWithCurrentTarget)
                 ->Event("StopInteraction", &InteractorRequests::StopInteraction)
+                ->Event("GetHoldProgress", &InteractorRequests::GetHoldProgress)
                 ;
         }
     }

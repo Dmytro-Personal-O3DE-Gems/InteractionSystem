@@ -30,6 +30,15 @@ namespace InteractionSystem
         //! The "button up" moment. In PressOrHold mode a quick release counts as a press;
         //! otherwise an attempt that has not completed yet is cancelled. Has no effect if no attempt is in progress.
         virtual void StopInteraction() = 0;
+
+        //! How far the current hold has progressed, from 0 to 1. For UI (a progress ring), polled every frame.
+        //! No parameters: the interactor itself knows whether an attempt is running and in which mode.
+        //! - No attempt in progress, Press mode, or PressOrHold still inside the press window: 0.
+        //! - Hold: time held / hold duration.
+        //! - PressOrHold after the window: (time held - window) / (hold duration - window),
+        //!   so the value starts at 0 when the window ends and reaches 1 exactly when the hold fires.
+        //! Drops to 0 as soon as the attempt ends (success, denial or cancel); smoothing is up to the UI.
+        virtual float GetHoldProgress() const = 0;
     };
 
     using InteractorRequestBus = AZ::EBus<InteractorRequests>;
