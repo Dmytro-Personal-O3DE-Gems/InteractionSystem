@@ -47,7 +47,17 @@ namespace InteractionSystem
         AZ::TickBus::Handler::BusDisconnect();
         InteractionOverlapFinderRequestBus::Handler::BusDisconnect();
 
-		m_currentTargetId = AZ::EntityId();
+        // A finder that stops looking has lost its target too. Without this event the listeners would keep
+        // the last target: the prompt would stay on screen and the Interactor would let a hold complete.
+        // Same order as in OnTick: the field changes first, so GetCurrentTarget() matches the event.
+        // The reset also makes a re-activated finder report its first target as a change.
+        if (m_currentTargetId.IsValid())
+        {
+            const AZ::EntityId previousTargetId = m_currentTargetId;
+            m_currentTargetId.SetInvalid();
+            InteractionOverlapFinderNotificationBus::Event(
+                m_ownerEntityId, &InteractionOverlapFinderNotifications::OnTargetChanged, previousTargetId, m_currentTargetId);
+        }
     }
 
     AZ::EntityId InteractionOverlapFinderComponent::GetCurrentTarget() const

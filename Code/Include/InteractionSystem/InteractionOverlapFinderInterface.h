@@ -33,6 +33,7 @@ namespace InteractionSystem
         AZ_RTTI(InteractionSystem::InteractionOverlapFinderNotifications, "{4229F620-A5A4-4339-AC7B-3090622B0FD7}");
 
         //! Sent only when the target changes, including when it is lost (newTargetId is then invalid).
+        //! Deactivating the finder also counts as losing the target: listeners never keep a target nobody tracks.
         virtual void OnTargetChanged(
             [[maybe_unused]] AZ::EntityId previousTargetId,
             [[maybe_unused]] AZ::EntityId newTargetId) {}
