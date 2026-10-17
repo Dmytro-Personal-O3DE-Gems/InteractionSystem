@@ -7,8 +7,60 @@
 
 namespace InteractionSystem
 {
+    void LocalizedText::Reflect(AZ::ReflectContext* context)
+    {
+        if (auto* serializeContext = azrtti_cast<AZ::SerializeContext*>(context))
+        {
+            serializeContext->Class<LocalizedText>()
+                ->Version(1)
+                ->Field("Key", &LocalizedText::m_key)
+                ->Field("DefaultText", &LocalizedText::m_defaultText)
+                ;
+
+            if (AZ::EditContext* editContext = serializeContext->GetEditContext())
+            {
+                // No ShowChildrenOnly here (unlike InteractionInfo): each LocalizedText field of a component
+                // is shown as its own collapsible group, titled by that field's DataElement name ("On Press Label", ...).
+                editContext->Class<LocalizedText>("Localized Text",
+                    "Player-visible text: a localization key plus the text shown without a translation.")
+                    ->ClassElement(AZ::Edit::ClassElements::EditorData, "")
+                    ->Attribute(AZ::Edit::Attributes::AutoExpand, true)
+                    ->DataElement(
+                        AZ::Edit::UIHandlers::Default,
+                        &LocalizedText::m_key,
+                        "Key",
+                        "Localization key, e.g. door.open. Leave empty if this text is not localized: "
+                        "then Default Text is shown as is.")
+                    ->DataElement(
+                        AZ::Edit::UIHandlers::Default,
+                        &LocalizedText::m_defaultText,
+                        "Default Text",
+                        "Shown when there is no translation for the key, or no localization at all. "
+                        "Leave both fields empty to show nothing.")
+                    ;
+            }
+        }
+
+        if (auto* behaviorContext = azrtti_cast<AZ::BehaviorContext*>(context))
+        {
+            // A plain value for scripts. Script Canvas can create one: Class<T>() registers the default
+            // constructor automatically for default-constructible types (see BehaviorClassBuilder.inl).
+            behaviorContext->Class<LocalizedText>("LocalizedText")
+                ->Attribute(AZ::Script::Attributes::Scope, AZ::Script::Attributes::ScopeFlags::Common)
+                ->Attribute(AZ::Script::Attributes::Category, "Interaction")
+                ->Attribute(AZ::Script::Attributes::Storage, AZ::Script::Attributes::StorageType::Value)
+                ->Property("Key", BehaviorValueProperty(&LocalizedText::m_key))
+                ->Property("DefaultText", BehaviorValueProperty(&LocalizedText::m_defaultText))
+                ->Method("IsEmpty", &LocalizedText::IsEmpty)
+                ;
+        }
+    }
+
     void InteractionInfo::Reflect(AZ::ReflectContext* context)
     {
+        // InteractionInfo has LocalizedText fields, so that type is reflected together with it.
+        LocalizedText::Reflect(context);
+
         if (auto* serializeContext = azrtti_cast<AZ::SerializeContext*>(context))
         {
             serializeContext->Class<InteractionInfo>()

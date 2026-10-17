@@ -32,6 +32,37 @@ namespace InteractionSystem
         Hold
     };
 
+    //! Player-visible text that can be localized: a localization key plus the text to show without a translation.
+    //! The interaction system only stores and passes it. Translating is the job of whoever displays it (e.g. the UI prompt),
+    //! so this gem does not depend on any localization gem.
+    //! How a displayer is expected to read it:
+    //! - key and default text both empty -> nothing to show;
+    //! - key empty                       -> show m_defaultText as is (a game without localization);
+    //! - key set                         -> show the translation of m_key; if there is none, m_defaultText;
+    //!                                      if that is empty too, m_key itself (a loud hint that a string is missing).
+    struct LocalizedText
+    {
+        AZ_TYPE_INFO(LocalizedText, "{3612B7EA-7515-43BD-8EA1-6F19BA93FFF1}");
+        AZ_CLASS_ALLOCATOR(LocalizedText, AZ::SystemAllocator);
+
+        //! Registers this struct in the Serialize, Edit and Behavior contexts.
+        //! Called from InteractionInfo::Reflect(), because InteractionInfo has fields of this type.
+        static void Reflect(AZ::ReflectContext* context);
+
+        //! True when there is nothing to show: no key and no default text.
+        //! Also means "no opinion" in an answer to InteractableNotifications::ReturnInteractableLabel.
+        bool IsEmpty() const
+        {
+            return m_key.empty() && m_defaultText.empty();
+        }
+
+        //! Localization key, e.g. "door.open". Empty means "not localized": m_defaultText is shown as is.
+        AZStd::string m_key;
+
+        //! Text shown when there is no translation for m_key (or no localization at all), e.g. "Open".
+        AZStd::string m_defaultText;
+    };
+
     //! Static description of an interactable entity.
     //! Used both as the Interactable component's configuration (edited in the inspector)
     //! and as the answer to "what is this thing?" for the Interactor and UI prompts.
