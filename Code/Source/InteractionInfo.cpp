@@ -63,12 +63,17 @@ namespace InteractionSystem
 
         if (auto* serializeContext = azrtti_cast<AZ::SerializeContext*>(context))
         {
+            // Version 2: the three texts became LocalizedText (key + default text).
+            // They are stored under NEW names on purpose: under the old names ("DisplayName", "OnPressLabel",
+            // "OnHoldLabel") existing prefabs hold plain strings, which do not fit into a LocalizedText.
+            // Old values are not converted: the JSON loader skips fields it does not know, so the texts
+            // come back empty and have to be entered again in the inspector.
             serializeContext->Class<InteractionInfo>()
-                ->Version(1)
-                ->Field("DisplayName", &InteractionInfo::m_displayName)
+                ->Version(2)
+                ->Field("Name", &InteractionInfo::m_displayName)
                 ->Field("Mode", &InteractionInfo::m_mode)
-				->Field("OnPressLabel", &InteractionInfo::m_OnPressLabel)
-				->Field("OnHoldLabel", &InteractionInfo::m_OnHoldLabel)
+                ->Field("PressLabel", &InteractionInfo::m_OnPressLabel)
+                ->Field("HoldLabel", &InteractionInfo::m_OnHoldLabel)
                 ->Field("HoldDuration", &InteractionInfo::m_holdDuration)
                 ;
 
@@ -81,7 +86,7 @@ namespace InteractionSystem
                         AZ::Edit::UIHandlers::Default,
                         &InteractionInfo::m_displayName,
                         "Display Name",
-                        "Name shown to the player in the interaction prompt. Leave empty to show no name.")
+                        "Name shown to the player in the interaction prompt. Leave both fields empty to show no name.")
                     ->DataElement(
                         AZ::Edit::UIHandlers::ComboBox,
                         &InteractionInfo::m_mode,
@@ -96,13 +101,13 @@ namespace InteractionSystem
                         AZ::Edit::UIHandlers::Default,
                         &InteractionInfo::m_OnPressLabel,
                         "On Press Label",
-						"Optional label for the OnPress interaction. Leave empty to show no label.")
-					    ->Attribute(AZ::Edit::Attributes::Visibility, &InteractionInfo::GetOnPressLabelVisibility)
+                        "Optional label for the press interaction. Leave both fields empty to show no label.")
+                        ->Attribute(AZ::Edit::Attributes::Visibility, &InteractionInfo::GetOnPressLabelVisibility)
                     ->DataElement(
                         AZ::Edit::UIHandlers::Default,
                         &InteractionInfo::m_OnHoldLabel,
-						"On Hold Label",
-						"Optional label for the OnHold interaction. Leave empty to show no label.")
+                        "On Hold Label",
+                        "Optional label for the hold interaction. Leave both fields empty to show no label.")
                         ->Attribute(AZ::Edit::Attributes::Visibility, &InteractionInfo::GetOnHoldLabelVisibility)
                     ->DataElement(
                         AZ::Edit::UIHandlers::Default,

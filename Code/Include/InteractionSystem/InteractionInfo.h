@@ -72,7 +72,7 @@ namespace InteractionSystem
         AZ_TYPE_INFO(InteractionInfo, "{1FFAE517-5ECF-4AF9-BDAB-56151950B5B7}");
         AZ_CLASS_ALLOCATOR(InteractionInfo, AZ::SystemAllocator);
 
-        //! Registers this struct and both enums in the Serialize, Edit and Behavior contexts.
+        //! Registers this struct, LocalizedText and both enums in the Serialize, Edit and Behavior contexts.
         //! Must be called exactly once, from the Reflect() of a component whose descriptor is registered in the module.
         static void Reflect(AZ::ReflectContext* context);
 
@@ -86,18 +86,20 @@ namespace InteractionSystem
         //! Editor-only: shows the hold label only in modes that have a hold (Hold, PressOrHold).
         AZ::Crc32 GetOnHoldLabelVisibility() const;
 
-        //! Name shown to the player, e.g. "Backpack". Empty means no name is shown.
-        AZStd::string m_displayName;
+        //! Name shown to the player, e.g. key "item.backpack.name" + default text "Backpack".
+        //! Empty (LocalizedText::IsEmpty) means no name is shown.
+        LocalizedText m_displayName;
 
         //! Which interactions this entity supports.
         InteractionMode m_mode = InteractionMode::Press;
 
-        //! Default label of the press action, e.g. "Open". Used when no listener answers the label query
-        //! (see InteractableRequests::GetInteractableLabel). Later this becomes a localization key.
-        AZStd::string m_OnPressLabel;
+        //! Default label of the press action, e.g. key "door.open" + default text "Open".
+        //! Used when no listener answers the label query (see InteractableRequests::GetInteractableLabel).
+        //! Empty (LocalizedText::IsEmpty) means no label is shown.
+        LocalizedText m_OnPressLabel;
 
-        //! Default label of the hold action, e.g. "Lockpick". Same rules as m_OnPressLabel.
-        AZStd::string m_OnHoldLabel;
+        //! Default label of the hold action, e.g. key "door.lockpick" + default text "Lockpick". Same rules as m_OnPressLabel.
+        LocalizedText m_OnHoldLabel;
 
         //! Seconds the button must be held for a Hold interaction.
         //! In PressOrHold mode it is also the threshold that separates a press from a hold.

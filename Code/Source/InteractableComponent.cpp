@@ -56,27 +56,28 @@ namespace InteractionSystem
             return canInteract;
         }
 
-        AZStd::string ReturnInteractableLabel(AZ::EntityId interactorId, InteractionType type) override
+        LocalizedText ReturnInteractableLabel(AZ::EntityId interactorId, InteractionType type) override
         {
-            AZStd::string label;
+            // Empty ("no opinion") unless the graph answers: CallResult leaves it untouched otherwise.
+            LocalizedText label;
             CallResult(label, FN_ReturnInteractableLabel, interactorId, type);
             return label;
-		}
+        }
     };
 
     namespace
     {
         //! Collects the answers of all ReturnInteractableLabel listeners.
         //! EventResult does "result = <answer of a handler>" once per handler (same trick as EBusReduceResult),
-        //! so operator= sees every answer. Empty answers mean "no opinion" and are skipped.
+        //! so operator= sees every answer. Empty answers (LocalizedText::IsEmpty) mean "no opinion" and are skipped.
         struct LabelAnswers
         {
-            AZStd::string m_firstLabel; //!< First non-empty answer.
+            LocalizedText m_firstLabel; //!< First non-empty answer.
             int m_count = 0;            //!< How many listeners gave a non-empty answer.
 
-            void operator=(const AZStd::string& answer)
+            void operator=(const LocalizedText& answer)
             {
-                if (answer.empty())
+                if (answer.IsEmpty())
                 {
                     return;
                 }
@@ -115,7 +116,7 @@ namespace InteractionSystem
         return canInteract.value;
     }
 
-    AZStd::string InteractableComponent::GetInteractableLabel(AZ::EntityId interactorId, InteractionType type) const
+    LocalizedText InteractableComponent::GetInteractableLabel(AZ::EntityId interactorId, InteractionType type) const
     {
         LabelAnswers answers;
         InteractableNotificationBus::EventResult(

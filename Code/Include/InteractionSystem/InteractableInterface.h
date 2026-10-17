@@ -28,7 +28,8 @@ namespace InteractionSystem
         //! The Interactor asks this right before calling Interact().
         virtual bool CanInteract(AZ::EntityId interactorId, [[maybe_unused]] InteractionType type) const = 0;
 
-        //! Label of one action of this interactable, e.g. "Open" or "Close", for UI prompts.
+        //! Label of one action of this interactable for UI prompts, e.g. key "door.open" + default text "Open".
+        //! The label is NOT translated here: translating is the job of whoever shows it (see LocalizedText).
         //! Asks the listeners (ReturnInteractableLabel) first: the label can depend on runtime state
         //! (door open or closed) and on who is asking (has the key or not).
         //! No non-empty answer -> the default label from InteractionInfo for this type.
@@ -36,7 +37,8 @@ namespace InteractionSystem
         //! Cheap enough to be called every frame while the interactable is targeted.
         //! @param interactorId the entity that is asking for the label.
         //! @param type which action the label is for (press or hold).
-        virtual AZStd::string GetInteractableLabel(AZ::EntityId interactorId, [[maybe_unused]] InteractionType type) const = 0;
+        //! @return the label; empty (LocalizedText::IsEmpty) means "show no label".
+        virtual LocalizedText GetInteractableLabel(AZ::EntityId interactorId, [[maybe_unused]] InteractionType type) const = 0;
 
         //! Performs the interaction. The interactable does not know what the interaction does:
         //! it only notifies reaction components through InteractableNotificationBus.
@@ -83,17 +85,18 @@ namespace InteractionSystem
             [[maybe_unused]] InteractionType type) { return true; }
 
         //! Sent to the interactable's own entity when someone asks GetInteractableLabel(), e.g. a UI prompt.
-        //! Return a label to override the default one, or an empty string for "no opinion".
+        //! Return a label (key + default text) to override the default one,
+        //! or an empty LocalizedText (both fields empty) for "no opinion".
         //! Rules for listeners:
         //! - Called EVERY FRAME while the entity is targeted: keep it cheap and free of side effects
         //!   (no sounds, no logs, no state changes), just answer from the current state.
         //! - A label must have a single owner: if several listeners answer for the same action,
         //!   one answer is picked at random (handler order is not defined) and a warning is logged.
-        //! Script Canvas: the node has an input pin for the answer; leave it empty when only observing.
+        //! Script Canvas: the node has an input pin for the answer; leave both fields empty when only observing.
         //! @param interactorId the entity that is asking for the label.
         //! @param type which action the label is for (press or hold).
-        //! @return the label to show, or an empty string to keep the default from InteractionInfo.
-        virtual AZStd::string ReturnInteractableLabel(
+        //! @return the label to show, or an empty LocalizedText to keep the default from InteractionInfo.
+        virtual LocalizedText ReturnInteractableLabel(
             [[maybe_unused]] AZ::EntityId interactorId,
             [[maybe_unused]] InteractionType type) { return {}; }
     };
