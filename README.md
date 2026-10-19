@@ -8,6 +8,7 @@ It is built around two components: an **Interactor** (the one who acts: the play
 - Three interaction modes per object: **Press**, **Hold**, or **Press or hold** (two different actions on one button).
 - Any component or Script Canvas graph on the object can **veto** an interaction (a locked door) or **override its label** ("Open" / "Unlock").
 - Hold progress (0..1) for UI, plus "done" / "denied" notifications.
+- Ready for localization: every player-visible text (name and labels) is a **key + default text** pair. The gem only stores and passes it; whoever shows the text translates it, so the gem works with or without a localization gem — see [Labels for UI prompts](#labels-for-ui-prompts).
 - No UI inside. An optional prompt with a hold-progress ring lives in a separate gem, [InteractionSystemUI](https://github.com/Dmytro-Personal-O3DE-Gems/InteractionSystemUI).
 
 ## Contents
@@ -69,7 +70,7 @@ All components are in the **Interaction** category of the *Add Component* menu.
 | Component | Put it on | What it does | Settings |
 |---|---|---|---|
 | **Interactor** | the character root (player or NPC) | Runs interaction attempts: checks, timing, notifications. One per entity. | **Press Window** (s, default 0.3) — for *Press or hold* objects: releasing within this time counts as a press |
-| **Interactable** | the object | Marks the entity as interactable and describes it. One per entity. | **Interaction Info**: Display Name, Mode, On Press Label, On Hold Label, Hold Duration (s, default 1.0) |
+| **Interactable** | the object | Marks the entity as interactable and describes it. One per entity. | **Interaction Info**: Display Name, Mode, On Press Label, On Hold Label, Hold Duration (s, default 1.0). The name and the labels each have a **Key** (for localization, may stay empty) and a **Default Text** |
 | **Interaction Overlap Finder** | the camera (or an NPC's head) | Raycasts every tick along the entity's forward axis (+Y) and remembers the interactable in front of it. Ignores the owner's own colliders; walls block what is behind them. | **Owner Entity** — the character root (required); **Cast Distance** (m, default 2.0) |
 | **Interactor Input** | the player's character root | Player only. Turns the `Interact` input event into "button down / button up" for the Interactor. Requires an Interactor on the same entity. | — |
 
@@ -87,7 +88,7 @@ Interactor Input listens to the input event named **`Interact`**. Add it to the 
 
 **Door**:
 5. A collider (PhysX), so the ray can hit it.
-6. **Interactable**: Mode = *Press*, On Press Label = `Open`.
+6. **Interactable**: Mode = *Press*, On Press Label → Default Text = `Open` (Key = `door.open` if the project uses localization, otherwise leave it empty).
 7. Something that reacts to `OnPressInteracted`: a Script Canvas graph or your own component (see [Connecting to other gems and components](#connecting-to-other-gems-and-components)).
 
 Enter game mode, look at the door from closer than 2 m, press E.
@@ -158,7 +159,7 @@ Everything you connect goes through `InteractableNotificationBus`, addressed to 
 |---|---|---|---|
 | **React** | `OnPressInteracted(interactor)` / `OnHoldInteracted(interactor)` | do something when the interaction happened | — |
 | **Veto** | `OnCanInteractQuery(interactor, type)` → `bool` | forbid it (a locked door, a full inventory) | [Blocking an interaction](#blocking-an-interaction) |
-| **Label** | `ReturnInteractableLabel(interactor, type)` → `string` | change the prompt text ("Open" → "Unlock") | [Labels for UI prompts](#labels-for-ui-prompts) |
+| **Label** | `ReturnInteractableLabel(interactor, type)` → `LocalizedText` | change the prompt text ("Open" → "Unlock") | [Labels for UI prompts](#labels-for-ui-prompts) |
 | *(optional)* | `OnInteractionRefused(interactor, type)` | react to a refused attempt (rattle the handle) | — |
 
 `interactor` is the entity that acts (player or NPC). Pass it on to the other gem, for example *whose* inventory receives the item.
@@ -323,19 +324,24 @@ bool LockedDoorComponent::OnCanInteractQuery(AZ::EntityId interactorId, Interact
     return hasKey;  // false blocks the interaction
 }
 
-AZStd::string LockedDoorComponent::ReturnInteractableLabel(AZ::EntityId interactorId, InteractionSystem::InteractionType type)
+InteractionSystem::LocalizedText LockedDoorComponent::ReturnInteractableLabel(
+    AZ::EntityId interactorId, InteractionSystem::InteractionType type)
 {
     if (type != InteractionSystem::InteractionType::Press)
     {
-        return {};  // empty = no opinion, the default label stays
+        return {};  // both fields empty = no opinion, the default label stays
     }
     bool hasKey = false;
     Inventory::InventoryRequestBus::EventResult(hasKey, interactorId, &Inventory::InventoryRequests::HasItem, m_keyItemId);
-    return hasKey ? "Unlock" : "Locked";
+
+    InteractionSystem::LocalizedText label;
+    label.m_key = hasKey ? "door.unlock" : "door.locked";   // leave empty if the project has no localization
+    label.m_defaultText = hasKey ? "Unlock" : "Locked";
+    return label;
 }
 ```
 
-`ReturnInteractableLabel` is called every frame while the door is targeted. Only read state there: no sounds, no logs, no changes.
+`ReturnInteractableLabel` is called every frame while the door is targeted. Only read state there: no sounds, no logs, no changes. Return the key and the default text, **not** a translated string: translating is the UI's job (see [Labels for UI prompts](#labels-for-ui-prompts)).
 
 ### Way 2: Script Canvas graph
 
@@ -361,7 +367,7 @@ No C++ and no rebuild. It works only if the other gem's bus is **reflected to Sc
 - The **Type** output is a plain `Number`. Compare it with the constants `InteractionType_Press` / `InteractionType_Hold`.
 - During one hold, `CanInteract` is asked twice: at the start and at the threshold. So this event fires twice, which is expected.
 
-**Label in a graph:** add **ReturnInteractableLabel** and put the text into its input String pin. Leave it empty for "no opinion". It is called every frame: no Print or other side effects there.
+**Label in a graph:** add **ReturnInteractableLabel**. Its answer is a **LocalizedText** value with *Key* and *DefaultText*: create one, fill the fields and connect it to the answer pin. Leave both fields empty for "no opinion". It is called every frame: no Print or other side effects there. (Overriding a label from a graph was tested while labels were plain strings; with `LocalizedText` it is not re-tested yet.)
 
 ### Which way to choose
 
@@ -395,15 +401,37 @@ A blocked attempt sends `OnInteractionRefused` to the object (play the "locked" 
 
 ## Labels for UI prompts
 
-`InteractableRequests::GetInteractableLabel(interactor, type)` returns the text for one action, for example "Open".
+`InteractableRequests::GetInteractableLabel(interactor, type)` returns the label of one action as a `LocalizedText`, for example key `door.open` + default text `Open`.
 
-1. It asks listeners on the object through `ReturnInteractableLabel(interactor, type)`. A non-empty string overrides the default, an empty string means "no opinion".
+1. It asks listeners on the object through `ReturnInteractableLabel(interactor, type)`. A non-empty answer overrides the default; an empty one (both fields empty) means "no opinion".
 2. No answers → the default label from *Interaction Info* (*On Press Label* / *On Hold Label*).
 3. Several answers → one of them is used and a warning is logged: a label must have **one owner**.
 
 The label may depend on runtime state and on who is asking, for example "Unlock" if this interactor has the key, "Open" otherwise.
 
 `ReturnInteractableLabel` is called **every frame** while the object is targeted. Keep it cheap and free of side effects: no sounds, no logs, no state changes.
+
+### Localization: key + default text
+
+Every player-visible text — *Display Name*, *On Press Label*, *On Hold Label* and the answers of `ReturnInteractableLabel` — is a `LocalizedText` (`InteractionSystem/InteractionInfo.h`):
+
+| Field | Example | Meaning |
+|---|---|---|
+| `m_key` (*Key*) | `door.open` | what a localization system translates |
+| `m_defaultText` (*Default Text*) | `Open` | shown when there is no translation, or no localization at all |
+
+The gem **never translates**. It stores the pair and passes it on, and the code that shows the text decides. That way it does not depend on any localization gem. The expected way to show a `LocalizedText`:
+
+| Key | Default Text | Show |
+|---|---|---|
+| empty | empty | nothing |
+| empty | `Open` | `Open` as is (a game without localization) |
+| `door.open` | `Open` | the translation of `door.open`; if there is none — `Open` |
+| `door.open` | empty | the translation; if there is none — `door.open` itself (a loud hint that a string is missing) |
+
+[InteractionSystemUI](https://github.com/Dmytro-Personal-O3DE-Gems/InteractionSystemUI) does exactly this. It asks for translations through the header-only [LocalizationContract](https://github.com/Dmytro-Personal-O3DE-Gems/LocalizationContract) gem, implemented for example by [LocalizationGem](https://github.com/Dmytro-Personal-O3DE-Gems/LocalizationGem). Without a localization gem it shows the default texts.
+
+A game without localization simply leaves every *Key* empty.
 
 ## Hold progress and results for UI
 
@@ -433,12 +461,12 @@ All checks (`CanInteract`, votes) and notifications work the same as for the pla
 
 ## Bus reference
 
-All buses are reflected to Script Canvas and Lua (category *Interaction*). Enums are available as constants: `Mode_Press`, `Mode_Hold`, `Mode_PressOrHold`, `InteractionType_Press`, `InteractionType_Hold`.
+All buses are reflected to Script Canvas and Lua (category *Interaction*). Enums are available as constants: `Mode_Press`, `Mode_Hold`, `Mode_PressOrHold`, `InteractionType_Press`, `InteractionType_Hold`. `LocalizedText` is a value type with the properties `Key` and `DefaultText` and the method `IsEmpty`.
 
 | Bus | Address | Handled by | Calls / events |
 |---|---|---|---|
-| `InteractableRequestBus` | the object | Interactable (single handler) | `GetInteractionInfo`, `CanInteract(interactor, type)`, `GetInteractableLabel(interactor, type)`, `Interact(interactor, type)` |
-| `InteractableNotificationBus` | the object | your reaction components / graphs | `OnPressInteracted`, `OnHoldInteracted`, `OnInteractionRefused`, `OnCanInteractQuery` → bool (AND vote), `ReturnInteractableLabel` → string |
+| `InteractableRequestBus` | the object | Interactable (single handler) | `GetInteractionInfo`, `CanInteract(interactor, type)`, `GetInteractableLabel(interactor, type)` → `LocalizedText`, `Interact(interactor, type)` |
+| `InteractableNotificationBus` | the object | your reaction components / graphs | `OnPressInteracted`, `OnHoldInteracted`, `OnInteractionRefused`, `OnCanInteractQuery` → bool (AND vote), `ReturnInteractableLabel` → `LocalizedText` |
 | `InteractorRequestBus` | the interactor | Interactor (single handler) | `StartInteraction(target)`, `StartInteractionWithCurrentTarget()`, `StopInteraction()`, `GetHoldProgress()` |
 | `InteractorNotificationBus` | the interactor | UI, sounds, achievements | `OnInteractionDone(target, type)`, `OnInteractionDenied(target, type)` |
 | `InteractionOverlapFinderRequestBus` | the **owner** | Interaction Overlap Finder (single handler) | `GetCurrentTarget()` |
@@ -448,11 +476,11 @@ All buses are reflected to Script Canvas and Lua (category *Interaction*). Enums
 
 ## Status and roadmap
 
-Tested in the editor with a player character: the three modes, labels (default, overridden from Script Canvas, the warning for two owners), hold progress, done notifications, target loss when the finder is deactivated (exiting game mode).
+Tested in the editor with a player character: the three modes, labels (default, overridden from C++ by a door component, the warning for two owners), localized labels shown by InteractionSystemUI through LocalizationGem (switching languages at runtime), hold progress, done notifications, target loss when the finder is deactivated (exiting game mode).
 
 Planned or not yet verified:
 - **NPCs**: designed for, not tested yet (waits for AI).
-- **Localization**: *Display Name* and labels are plain strings for now and will become localization keys.
+- **Script Canvas labels**: overriding a label from a graph was tested while labels were plain strings; with `LocalizedText` it is not re-tested yet.
 - `InteractorInputRequestBus` is an empty placeholder.
 
 ## License
